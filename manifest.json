@@ -1,0 +1,10 @@
+{
+    "name": "TableTalk - Chat entre mesas",
+    "short_name": "TableTalk",
+    "start_url": "index.html",
+    "display": "standalone",
+    "background_color": "#FFF5F7",
+    "theme_color": "#FF4B91",
+    "orientation": "portrait",
+    "description": "Chat anónimo y seguro entre mesas de restaurante"
+}
