@@ -51,14 +51,12 @@
         .received {
             background-color: var(--background-color);
             margin-right: 20%;
-            border-bottom-left-radius: 5px;
         }
 
         .sent {
             background-color: var(--primary-color);
             color: white;
             margin-left: 20%;
-            border-bottom-right-radius: 5px;
         }
 
         .input-group {
@@ -78,7 +76,6 @@
             border-radius: 8px;
             font-size: 16px;
             margin-bottom: 10px;
-            box-sizing: border-box;
         }
 
         button {
@@ -105,7 +102,6 @@
         .status {
             color: var(--text-color);
             font-style: italic;
-            text-align: center;
             margin: 10px 0;
         }
 
@@ -120,22 +116,8 @@
         <div id="initialScreen" class="screen">
             <h1>TableTalk</h1>
             <p>¿Qué deseas hacer?</p>
-            <div class="input-group">
-                <button id="findTableBtn">Buscar una mesa</button>
-                <button id="beTableBtn">Soy una mesa</button>
-            </div>
-        </div>
-
-        <!-- Configuración de Mesa -->
-        <div id="setupTableScreen" class="screen hidden">
-            <h2>Configurar Mesa</h2>
-            <div class="input-group">
-                <label>Número de esta mesa:</label>
-                <input type="number" id="setupTableNumber" placeholder="Ingresa el número de mesa">
-                <button id="confirmTableSetup">Confirmar</button>
-                <button id="backFromSetupBtn">Volver</button>
-            </div>
-            <div id="setupStatus" class="status"></div>
+            <button id="findTableBtn">Buscar una mesa</button>
+            <button id="beTableBtn">Soy una mesa</button>
         </div>
 
         <!-- Pantalla buscar mesa -->
@@ -155,10 +137,9 @@
             </div>
             <button id="requestChatBtn">Solicitar Chat</button>
             <button id="backFromFindBtn">Volver</button>
-            <div id="findStatus" class="status"></div>
         </div>
 
-        <!-- Pantalla de mesa esperando -->
+        <!-- Pantalla de mesa -->
         <div id="tableScreen" class="screen hidden">
             <h2>Mesa <span id="tableNumberDisplay">--</span></h2>
             <div id="pendingRequests"></div>
