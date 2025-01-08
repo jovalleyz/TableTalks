@@ -12,7 +12,6 @@ class TableTalk {
     initializeElements() {
         // Pantallas
         this.initialScreen = document.getElementById('initialScreen');
-        this.setupTableScreen = document.getElementById('setupTableScreen');
         this.findTableScreen = document.getElementById('findTableScreen');
         this.tableScreen = document.getElementById('tableScreen');
         this.chatArea = document.getElementById('chatArea');
@@ -21,19 +20,12 @@ class TableTalk {
         this.findTableBtn = document.getElementById('findTableBtn');
         this.beTableBtn = document.getElementById('beTableBtn');
 
-        // Elementos de configuración de mesa
-        this.setupTableNumber = document.getElementById('setupTableNumber');
-        this.confirmTableSetup = document.getElementById('confirmTableSetup');
-        this.backFromSetupBtn = document.getElementById('backFromSetupBtn');
-        this.setupStatus = document.getElementById('setupStatus');
-
         // Elementos de búsqueda
         this.myTableNumberInput = document.getElementById('myTableNumber');
         this.targetTableNumberInput = document.getElementById('targetTableNumber');
         this.visitorNameInput = document.getElementById('visitorName');
         this.requestChatBtn = document.getElementById('requestChatBtn');
         this.backFromFindBtn = document.getElementById('backFromFindBtn');
-        this.findStatus = document.getElementById('findStatus');
 
         // Elementos de mesa
         this.tableNumberDisplay = document.getElementById('tableNumberDisplay');
@@ -51,80 +43,57 @@ class TableTalk {
     }
 
     addEventListeners() {
-        // Botones principales
         this.findTableBtn.addEventListener('click', () => this.showFindTableScreen());
-        this.beTableBtn.addEventListener('click', () => this.showSetupTableScreen());
-
-        // Botones de configuración de mesa
-        this.confirmTableSetup.addEventListener('click', () => this.handleTableSetup());
-        this.backFromSetupBtn.addEventListener('click', () => this.showInitialScreen());
-
-        // Botones de búsqueda
+        this.beTableBtn.addEventListener('click', () => this.showTableScreen());
         this.requestChatBtn.addEventListener('click', () => this.requestChat());
         this.backFromFindBtn.addEventListener('click', () => this.showInitialScreen());
-
-        // Botones de mesa
         this.backFromTableBtn.addEventListener('click', () => this.showInitialScreen());
-
-        // Botones de chat
+        this.endChatBtn.addEventListener('click', () => this.endChat());
+        
         this.sendBtn.addEventListener('click', () => this.sendMessage());
         this.messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.sendMessage();
         });
-        this.endChatBtn.addEventListener('click', () => this.endChat());
     }
 
-    hideAllScreens() {
-        this.initialScreen.classList.add('hidden');
-        this.setupTableScreen.classList.add('hidden');
+    showInitialScreen() {
+        this.initialScreen.classList.remove('hidden');
         this.findTableScreen.classList.add('hidden');
+        this.tableScreen.classList.add('hidden');
+        this.chatArea.classList.add('hidden');
+        this.destroyPeer();
+    }
+
+    showFindTableScreen() {
+        this.initialScreen.classList.add('hidden');
+        this.findTableScreen.classList.remove('hidden');
         this.tableScreen.classList.add('hidden');
         this.chatArea.classList.add('hidden');
     }
 
-    showInitialScreen() {
-        this.hideAllScreens();
-        this.initialScreen.classList.remove('hidden');
-        this.destroyPeer();
-    }
-
-    showSetupTableScreen() {
-        this.hideAllScreens();
-        this.setupTableScreen.classList.remove('hidden');
-        this.setupTableNumber.focus();
-    }
-
-    showFindTableScreen() {
-        this.hideAllScreens();
-        this.findTableScreen.classList.remove('hidden');
-        this.myTableNumberInput.focus();
-    }
-
     showTableScreen() {
-        this.hideAllScreens();
+        this.isHost = true;
+        this.myTableNumber = prompt('Ingresa el número de esta mesa:');
+        if (!this.myTableNumber) {
+            return this.showInitialScreen();
+        }
+
+        this.tableNumberDisplay.textContent = this.myTableNumber;
+        this.initializePeer(`mesa_${this.myTableNumber}`);
+
+        this.initialScreen.classList.add('hidden');
+        this.findTableScreen.classList.add('hidden');
         this.tableScreen.classList.remove('hidden');
+        this.chatArea.classList.add('hidden');
     }
 
     showChatArea() {
-        this.hideAllScreens();
+        this.initialScreen.classList.add('hidden');
+        this.findTableScreen.classList.add('hidden');
+        this.tableScreen.classList.add('hidden');
         this.chatArea.classList.remove('hidden');
     }
 
-    handleTableSetup() {
-        const tableNumber = this.setupTableNumber.value.trim();
-        if (!tableNumber) {
-            alert('Por favor ingresa un número de mesa');
-            return;
-        }
-
-        this.isHost = true;
-        this.myTableNumber = tableNumber;
-        this.tableNumberDisplay.textContent = tableNumber;
-        this.initializePeer(`mesa_${tableNumber}`);
-        this.showTableScreen();
-    }
-
-    // Aquí comienzan las funciones de PeerJS
     destroyPeer() {
         if (this.connection) {
             this.connection.close();
@@ -144,25 +113,14 @@ class TableTalk {
         this.peer = new Peer(peerId, {
             host: '0.peerjs.com',
             secure: true,
-            port: 443,
-            config: {
-                'iceServers': [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' }
-                ]
-            }
+            port: 443
         });
 
-        this.peer.on('open', id => {
+        this.peer.on('open', (id) => {
             console.log('Conectado con ID:', id);
-            
-            if (this.isHost) {
-                this.tableStatus.textContent = 'Listo para recibir solicitudes';
-            }
         });
 
-        this.peer.on('connection', conn => {
-            console.log('Nueva conexión entrante');
+        this.peer.on('connection', (conn) => {
             if (this.isHost) {
                 this.handleIncomingRequest(conn);
             } else {
@@ -170,8 +128,8 @@ class TableTalk {
             }
         });
 
-        this.peer.on('error', err => {
-            console.error('Error de PeerJS:', err);
+        this.peer.on('error', (err) => {
+            console.error('Error PeerJS:', err);
             if (err.type === 'peer-unavailable') {
                 alert('La mesa no está disponible en este momento');
             }
@@ -206,7 +164,7 @@ class TableTalk {
                 this.showChatArea();
             });
 
-            conn.on('data', data => {
+            conn.on('data', (data) => {
                 if (data.type === 'request_response') {
                     if (data.accepted) {
                         this.handleConnection(conn);
@@ -225,15 +183,20 @@ class TableTalk {
     handleIncomingRequest(conn) {
         conn.on('open', () => {
             const { fromTable, userName } = conn.metadata;
-            const requestElement = document.createElement('div');
-            requestElement.className = 'request-card';
-            requestElement.innerHTML = `
+            
+            const requestCard = document.createElement('div');
+            requestCard.className = 'request-card';
+            requestCard.innerHTML = `
                 <p>Mesa ${fromTable} quiere chatear</p>
                 <p>Nombre: ${userName}</p>
-                <button onclick="tableTalk.acceptRequest('${conn.id}')">Aceptar</button>
-                <button onclick="tableTalk.rejectRequest('${conn.id}')">Rechazar</button>
+                <div class="request-buttons">
+                    <button onclick="tableTalk.acceptRequest('${conn.id}')">Aceptar</button>
+                    <button onclick="tableTalk.rejectRequest('${conn.id}')">Rechazar</button>
+                </div>
             `;
-            this.pendingRequests.appendChild(requestElement);
+
+            this.pendingRequests.appendChild(requestCard);
+            conn.on('close', () => requestCard.remove());
         });
     }
 
@@ -243,7 +206,7 @@ class TableTalk {
         this.messageInput.disabled = false;
         this.sendBtn.disabled = false;
 
-        conn.on('data', data => {
+        conn.on('data', (data) => {
             if (data.type === 'message') {
                 this.addMessageToChat(data.message, 'received');
             }
@@ -269,7 +232,7 @@ class TableTalk {
 
     addMessageToChat(message, type) {
         const messageElement = document.createElement('div');
-        messageElement.className = `message ${type}`;
+        messageElement.classList.add('message', type);
         messageElement.textContent = message;
         this.chatContainer.appendChild(messageElement);
         this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
@@ -288,19 +251,11 @@ class TableTalk {
             this.showInitialScreen();
         }
     }
-
-    acceptRequest(connId) {
-        // Implementar aceptación de solicitud
-    }
-
-    rejectRequest(connId) {
-        // Implementar rechazo de solicitud
-    }
 }
 
-// Crear instancia global para poder acceder desde los botones de solicitud
+// Inicializar la aplicación
 let tableTalk;
 window.addEventListener('load', () => {
     tableTalk = new TableTalk();
-    window.tableTalk = tableTalk; // Hacer accesible globalmente
+    window.tableTalk = tableTalk;
 });
