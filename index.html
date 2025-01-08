@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TableTalk - Chat entre mesas</title>
+    <title>TableTalk</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#FF4B91">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
             --primary-color: #FF4B91;
@@ -25,23 +24,12 @@
             color: var(--text-color);
         }
 
-        .welcome-screen {
-            text-align: center;
+        .screen {
             background: white;
             padding: 20px;
             border-radius: 15px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            margin: 40px auto;
-            max-width: 400px;
-        }
-
-        .table-info {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 20px 0;
-            text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 20px auto;
         }
 
         .chat-container {
@@ -55,34 +43,11 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
-        .quick-reactions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 10px;
-            margin: 10px 0;
-        }
-
-        .reaction-btn {
-            background: var(--background-color);
-            border: 1px solid var(--secondary-color);
-            border-radius: 20px;
-            padding: 8px 12px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .reaction-btn:hover {
-            background: var(--secondary-color);
-            color: white;
-        }
-
         .message {
             margin: 10px 0;
             padding: 10px;
             border-radius: 15px;
             max-width: 80%;
-            position: relative;
         }
 
         .received {
@@ -98,33 +63,36 @@
             border-bottom-right-radius: 5px;
         }
 
-        .input-container {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-            background: white;
-            padding: 10px;
-            border-radius: 25px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        .input-group {
+            margin: 15px 0;
         }
 
-        input {
-            flex: 1;
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input, select {
+            width: 100%;
             padding: 12px;
             border: 1px solid #ddd;
-            border-radius: 20px;
+            border-radius: 8px;
             font-size: 16px;
+            margin-bottom: 10px;
         }
 
         button {
+            width: 100%;
             padding: 12px 24px;
             background-color: var(--primary-color);
             color: white;
             border: none;
-            border-radius: 20px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            font-size: 16px;
             font-weight: bold;
+            margin: 5px 0;
         }
 
         button:hover {
@@ -135,137 +103,97 @@
             background-color: #ccc;
         }
 
-        .status {
-            color: var(--text-color);
-            font-style: italic;
+        .request-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
             margin: 10px 0;
-            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .request-card p {
+            margin: 5px 0;
+        }
+
+        .request-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .accept-btn {
+            background-color: #4CAF50;
+        }
+
+        .reject-btn {
+            background-color: #f44336;
         }
 
         .hidden {
             display: none;
         }
 
-        .timer {
-            text-align: center;
-            font-size: 14px;
-            color: var(--secondary-color);
-            margin: 10px 0;
-        }
-
-        .emergency-btn {
-            background-color: #ff4444;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            margin: 10px 0;
-            display: block;
-            width: 100%;
-        }
-
-        .username {
-            font-weight: bold;
-            font-size: 12px;
-            margin-bottom: 4px;
+        .status {
             color: var(--text-color);
-        }
-
-        #qrcode {
-            margin: 20px auto;
-            padding: 20px;
-            background: white;
-            border-radius: 10px;
-            width: fit-content;
-        }
-
-        .emoji-picker {
-            display: flex;
-            gap: 5px;
+            font-style: italic;
+            text-align: center;
             margin: 10px 0;
-            overflow-x: auto;
-            padding: 5px;
-        }
-
-        .emoji-btn {
-            font-size: 20px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 5px;
-            border-radius: 50%;
-        }
-
-        .emoji-btn:hover {
-            background: var(--background-color);
         }
     </style>
 </head>
 <body>
     <div id="app">
-        <!-- Pantalla de bienvenida -->
-        <div id="welcomeScreen" class="welcome-screen hidden">
-            <h2>¡Bienvenido a TableTalk!</h2>
-            <p>Chatea de forma anónima y segura con otras mesas</p>
-            <div class="table-info">
-                <p>Estás conectándote con la Mesa <span id="targetTable">--</span></p>
-            </div>
-            <input type="text" id="visitorName" placeholder="Tu nombre o alias" maxlength="20">
-            <button id="joinChatBtn">Comenzar a chatear</button>
+        <!-- Pantalla inicial -->
+        <div id="initialScreen" class="screen">
+            <h1>TableTalk</h1>
+            <p>¿Qué deseas hacer?</p>
+            <button id="findTableBtn">Buscar una mesa</button>
+            <button id="beTableBtn">Soy una mesa</button>
         </div>
 
-        <!-- Modo mesa anfitriona -->
-        <div id="hostMode" class="host-mode">
-            <h1>TableTalk</h1>
-            <div class="table-info">
-                <h2>Mesa <span id="tableNumber">--</span></h2>
-                <p>Escanea el código QR para chatear con esta mesa</p>
+        <!-- Pantalla para buscar mesa -->
+        <div id="findTableScreen" class="screen hidden">
+            <h2>Buscar Mesa</h2>
+            <div class="input-group">
+                <label>Tu mesa:</label>
+                <input type="number" id="myTableNumber" placeholder="Ingresa tu número de mesa">
             </div>
-            <div id="qrcode"></div>
+            <div class="input-group">
+                <label>Mesa que quieres contactar:</label>
+                <input type="number" id="targetTableNumber" placeholder="Ingresa el número de mesa">
+            </div>
+            <div class="input-group">
+                <label>Tu nombre:</label>
+                <input type="text" id="visitorName" placeholder="Ingresa tu nombre o alias">
+            </div>
+            <button id="requestChatBtn">Solicitar Chat</button>
+            <button id="backFromFindBtn">Volver</button>
+        </div>
+
+        <!-- Pantalla para mesa -->
+        <div id="tableScreen" class="screen hidden">
+            <h2>Mesa <span id="tableNumberDisplay">--</span></h2>
+            <div id="pendingRequests">
+                <h3>Solicitudes de chat pendientes</h3>
+                <div id="requestsList">
+                    <!-- Las solicitudes se agregarán aquí dinámicamente -->
+                </div>
+            </div>
+            <div id="tableStatus" class="status">Esperando solicitudes...</div>
+            <button id="backFromTableBtn">Volver</button>
         </div>
 
         <!-- Área de chat -->
-        <div id="chatArea" class="hidden">
-            <div class="table-info">
-                <h2>Chat con Mesa <span id="currentTable">--</span></h2>
-            </div>
-            
-            <div id="status" class="status">Esperando conexión...</div>
-            
-            <div class="quick-reactions">
-                <button class="reaction-btn">👋 ¡Hola!</button>
-                <button class="reaction-btn">🍷 ¿Un trago?</button>
-                <button class="reaction-btn">☕ ¿Café?</button>
-                <button class="reaction-btn">👀 Me gustaría conocerte</button>
-            </div>
-
+        <div id="chatArea" class="screen hidden">
+            <h2>Chat con Mesa <span id="currentTable">--</span></h2>
+            <div id="chatStatus" class="status">Conectando...</div>
             <div class="chat-container" id="chatContainer"></div>
-            
-            <div class="emoji-picker">
-                <button class="emoji-btn">😊</button>
-                <button class="emoji-btn">❤️</button>
-                <button class="emoji-btn">😉</button>
-                <button class="emoji-btn">🌹</button>
-                <button class="emoji-btn">👍</button>
-                <button class="emoji-btn">🤔</button>
-            </div>
-
-            <div class="input-container">
+            <div class="input-group">
                 <input type="text" id="messageInput" placeholder="Escribe tu mensaje..." disabled>
                 <button id="sendBtn" disabled>Enviar</button>
             </div>
-
-            <button id="emergencyBtn" class="emergency-btn">⚠️ Cerrar Chat Inmediatamente</button>
+            <button id="endChatBtn" class="reject-btn">Terminar Chat</button>
         </div>
     </div>
     <script src="app.js"></script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(registration => console.log('ServiceWorker registrado'))
-                    .catch(error => console.log('Error al registrar ServiceWorker:', error));
-            });
-        }
-    </script>
 </body>
 </html>
