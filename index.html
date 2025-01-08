@@ -4,11 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TableTalk</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        /* ... (mantener los estilos anteriores) ... */
+        :root {
+            --primary-color: #FF4B91;
+            --secondary-color: #FF82A9;
+            --background-color: #FFF5F7;
+            --text-color: #333;
+        }
 
-        .setup-table-screen {
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 0 20px;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .screen {
             background: white;
             padding: 20px;
             border-radius: 15px;
@@ -16,11 +30,87 @@
             margin: 20px auto;
         }
 
-        .debug-info {
-            font-size: 12px;
-            color: #666;
-            margin-top: 10px;
-            word-break: break-all;
+        .chat-container {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            margin: 20px 0;
+            min-height: 300px;
+            max-height: 500px;
+            overflow-y: auto;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 15px;
+            max-width: 80%;
+        }
+
+        .received {
+            background-color: var(--background-color);
+            margin-right: 20%;
+            border-bottom-left-radius: 5px;
+        }
+
+        .sent {
+            background-color: var(--primary-color);
+            color: white;
+            margin-left: 20%;
+            border-bottom-right-radius: 5px;
+        }
+
+        .input-group {
+            margin: 15px 0;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px 24px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        button:disabled {
+            background-color: #ccc;
+        }
+
+        .status {
+            color: var(--text-color);
+            font-style: italic;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .hidden {
+            display: none;
         }
     </style>
 </head>
@@ -30,26 +120,63 @@
         <div id="initialScreen" class="screen">
             <h1>TableTalk</h1>
             <p>¿Qué deseas hacer?</p>
-            <button id="findTableBtn">Buscar una mesa</button>
-            <button id="beTableBtn">Soy una mesa</button>
+            <div class="input-group">
+                <button id="findTableBtn">Buscar una mesa</button>
+                <button id="beTableBtn">Soy una mesa</button>
+            </div>
         </div>
 
-        <!-- Nueva pantalla de configuración de mesa -->
+        <!-- Configuración de Mesa -->
         <div id="setupTableScreen" class="screen hidden">
             <h2>Configurar Mesa</h2>
             <div class="input-group">
                 <label>Número de esta mesa:</label>
                 <input type="number" id="setupTableNumber" placeholder="Ingresa el número de mesa">
+                <button id="confirmTableSetup">Confirmar</button>
+                <button id="backFromSetupBtn">Volver</button>
             </div>
-            <button id="confirmTableSetup">Confirmar</button>
-            <button id="backFromSetupBtn">Volver</button>
             <div id="setupStatus" class="status"></div>
         </div>
 
-        <!-- ... (resto de las pantallas igual) ... -->
+        <!-- Pantalla buscar mesa -->
+        <div id="findTableScreen" class="screen hidden">
+            <h2>Buscar Mesa</h2>
+            <div class="input-group">
+                <label>Tu mesa:</label>
+                <input type="number" id="myTableNumber" placeholder="Ingresa tu número de mesa">
+            </div>
+            <div class="input-group">
+                <label>Mesa que quieres contactar:</label>
+                <input type="number" id="targetTableNumber" placeholder="Ingresa el número de mesa">
+            </div>
+            <div class="input-group">
+                <label>Tu nombre:</label>
+                <input type="text" id="visitorName" placeholder="Ingresa tu nombre o alias">
+            </div>
+            <button id="requestChatBtn">Solicitar Chat</button>
+            <button id="backFromFindBtn">Volver</button>
+            <div id="findStatus" class="status"></div>
+        </div>
 
-        <!-- Agregar información de depuración -->
-        <div id="debugInfo" class="debug-info"></div>
+        <!-- Pantalla de mesa esperando -->
+        <div id="tableScreen" class="screen hidden">
+            <h2>Mesa <span id="tableNumberDisplay">--</span></h2>
+            <div id="pendingRequests"></div>
+            <div id="tableStatus" class="status">Esperando solicitudes...</div>
+            <button id="backFromTableBtn">Volver</button>
+        </div>
+
+        <!-- Área de chat -->
+        <div id="chatArea" class="screen hidden">
+            <h2>Chat con Mesa <span id="currentTable">--</span></h2>
+            <div id="chatStatus" class="status">Conectando...</div>
+            <div class="chat-container" id="chatContainer"></div>
+            <div class="input-group">
+                <input type="text" id="messageInput" placeholder="Escribe tu mensaje..." disabled>
+                <button id="sendBtn" disabled>Enviar</button>
+            </div>
+            <button id="endChatBtn">Terminar Chat</button>
+        </div>
     </div>
     <script src="app.js"></script>
 </body>
